@@ -10,6 +10,7 @@ import * as crypto from './util/crypto.js';
 import * as fsUtil from './util/fs.js';
 import {getPlatformSpecificPackageFilename} from './util/package-name-utils.js';
 import {pack} from './cli/commands/pack.js';
+import * as trace from './trace';
 
 const fs = require('fs');
 const invariant = require('invariant');
@@ -85,11 +86,23 @@ export default class PackageInstallScripts {
     const afterFiles = await this.walk(loc);
 
     // work out what files have been created/modified
+    let sec = null;
     const buildArtifacts = [];
     for (const [file, mtime] of afterFiles) {
       if (!beforeFiles.has(file) || beforeFiles.get(file) !== mtime) {
+        if (!sec) {
+          sec = trace.section(`build artifacts for ${pkg.name}`);
+        }
+        if (!beforeFiles.has(file)) {
+          trace.step('new file: ' + file);
+        } else {
+          trace.step('modified file: ' + file);
+        }
         buildArtifacts.push(file);
       }
+    }
+    if (sec) {
+      sec.close();
     }
 
     if (!buildArtifacts.length) {
@@ -107,6 +120,8 @@ export default class PackageInstallScripts {
     const ref = pkg._reference;
     invariant(ref, 'expected reference');
     const loc = this.config.generateHardModulePath(ref);
+
+    const sec = trace.section(`install ${pkg.name}`);
 
     try {
       for (const [stage, cmd] of cmds) {
@@ -134,6 +149,7 @@ export default class PackageInstallScripts {
         throw err;
       }
     }
+    sec.close();
   }
 
   packageCanBeInstalled(pkg: Manifest): boolean {
