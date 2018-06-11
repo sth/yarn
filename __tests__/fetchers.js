@@ -354,6 +354,6 @@ test('TarballFetcher.fetch throws on truncated gzip files', async () => {
   if (process.version.split('.')[0] === 'v4') {
     await expect(fetcher.fetch()).rejects.toThrow();
   } else {
-    await expect(fetcher.fetch()).rejects.toThrow(new RegExp(reporter.lang('errorDecompressingGzip', '.*', '.*')));
+    await expect(fetcher.fetch()).rejects.toThrow(new RegExp(reporter.lang('errorDecompressingGzip', '.*', '.*broken-gz.tgz')));
   }
 });
